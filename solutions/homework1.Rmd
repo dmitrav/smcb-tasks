@@ -1,0 +1,101 @@
+---
+title: "Homework 1"
+author: "Andrei Dmitrenko"
+date: "February 25, 2019"
+output:
+    pdf_document:
+html_document:
+df_print: paged
+---
+  
+# Task 1
+
+## Conditional independence
+
+$$ A\ \bot\ B\ |\ C \iff P(A,B\ |\ C) = P(A|C)\cdot P(B|C)$$
+a) $P(A,B\ |\ C) = \frac{P(A,B,C)}{P(C)} = \frac{P(B)\ P(C|B)\ P(A|C)}{P(C)} = \frac{P(C)\ P(B|C)\ P(A|C)}{P(C)} = P(A|C)\cdot P(B|C), \ \Box$.  
+b) $P(A,B\ |\ C) = \frac{P(A)\ P(B)\ P(C\ |A,B)}{P(C)} \neq P(A|C)\cdot P(B|C),\ \text{in general}$.
+
+## Independence
+
+$$ A\ \bot\ B \iff P(A,B) = P(A)\cdot P(B) $$
+a) $P(A,B) = P(A|C)\ P(C)\ P(B) = P(C|A)\ P(A)\ P(B) \neq P(A)\cdot P(B),\ \text{in general}.$  
+b) $P(A,B) = P(A)\cdot P(B),\ \Box.$
+
+# Task 2
+
+1. $P(D\ |\ A, B, C, E, F, G ) = P(A)\ P(D|A)$  
+2. $P(D\ |\ MB(D)) = P(D\ |\ A,G,E) = P(A)\ P(D|A)$  
+3. Thus, $P(D\ |\ A, B, C, E, F, G ) = P(D\ |\ MB(D)) = P(D\ |\ A,G,E)$.
+
+# Task 3
+
+## a) Learning the structure
+
+```{r}
+
+data = read.csv("sachs.data.txt", sep="\t", header = TRUE)
+
+library(bnlearn)
+hc.structure = hc(data)
+plot(hc.structure)
+
+```
+
+```{r}
+
+tabu.structure = tabu(data)
+plot(tabu.structure)
+
+```
+
+The difference between two of the structures is in the directions of the arrows. For example, in HC structure "PIP2" node is influencing "PIP3" node, whereas in TABU structure "PIP2" is dependent on "PIP3".
+
+## b) Estimating conditional densities
+
+```{r}
+
+hc.fit = bn.fit(hc.structure, data)
+hc.fit$PKA
+hc.fit$Akt
+
+```
+
+
+```{r}
+
+tabu.fit = bn.fit(tabu.structure, data)
+tabu.fit$PKA
+tabu.fit$Akt
+
+```
+
+The only difference between densities is the conditional density of "Akt". This is due the difference of the structures:
+in TABU structure "Akt" does not depend on other nodes, whereas in HC structure "Akt" is influenced by "Erk", that's why conditioning on "Erk" takes place in conditional density.
+
+## c) Model averaging 
+
+```{r}
+
+arc.strengths <- boot.strength(data, R = 400, algorithm = "hc")
+
+# let's see the strongest arcs
+arc.strengths[(arc.strengths$strength > 0.75) & (arc.strengths$direction >= 0.5), ]
+
+# build new structure with the strongest arcs
+avg.hc.structure <- averaged.network(arc.strengths, threshold = 0.75)
+
+plot(avg.hc.structure)
+
+# fit parameters
+avg.hc.fit = bn.fit(avg.hc.structure, data)
+
+avg.hc.fit$PKA
+avg.hc.fit$Akt
+
+
+```
+
+
+
+
