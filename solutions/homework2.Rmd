@@ -1,0 +1,41 @@
+---
+title: "Homework 2"
+author: "Andrei Dmitrenko"
+date: "March 4, 2019"
+output:
+    pdf_document:
+html_document:
+df_print: paged
+---
+  
+# Task 4
+
+## Free parameters
+
+1. Since $P(D) = P(A)\cdot P(D|A)$, we'll need  $2\cdot 2 - 1 = 3$ parameters to define the CPD of node D.  
+2. Since $P(E) = P(B)\cdot P(C)\cdot P(F)\cdot P(E\ |\ B,C,F)$, we'll need  $2\cdot 3 \cdot 2 \cdot 3 - 1 = 35$ parameters to define the CPD of node E.  
+3. Since $P(G) = P(D)\cdot P(E)\cdot P(G\ |\ D,E)$, we'll need  $2\cdot 3 \cdot 3 - 1 = 17$ parameters to define the CPD of node G.  
+
+# Task 5
+
+## a) Joint probability
+$P(X_1,...,X_L,Z) = P(Z) \cdot \prod_{i=1}^{L} P(X_i|Z)$.
+
+## b) Hidden Likelihood
+$P(X,Z\ |\ \theta) = \prod_{i=1}^{N} P(X_i,Z\ |\ \theta) = \prod_{i=1}^{N} P(Z_i) \prod_{n=1}^{L} P(X_{i}^{n} | Z_i)$.
+
+Since we assume the prior to be constant, the latter $\propto \prod_{i=1}^{N} \prod_{n=1}^{L} \theta_{n,Z_iX_{i}^{n}}= \prod_{i=1}^{N} \prod_{n=1}^{L} \prod_{k \in [K]} \prod_{x \in \mathcal{X}} \theta_{n,kx}^{I_{n,kx}(Z_i)},\ \Box$.
+
+## c) E step of EM algorithm
+First, let's write down hidden (complete data) log-likelihood:
+$\mathcal{l}_{hid}(\theta) = log P(X,Z \ | \ \theta) = \sum_{i=1}^{N} \sum_{n=1}^{L} \sum_{k \in [K]} \sum_{x \in \mathcal{X}} I_{n,kx}(Z_i) \cdot log(\theta_{n,kx})$.
+
+Now, the expected values of $Z_i$:
+$\text{E}_{Z|X=x,\theta}[Z_i] = \frac{P(X_i=x \ |\ Z_i = k)}{\sum_{k \in [K]} P(X_i=x \ |\ Z_i = k)} = \frac{\theta_{n,kx}}{\sum_{k \in [K]} \theta_{n,kx}} = \gamma^i_{n,kx}$.
+
+## d) M step of EM algorithm
+In terms of expected counts $N_{n,kx} = \sum_{i=1}^{N}\gamma^i_{n,kx}$ the expected hidden log-likelihood can be written as:
+$\text{E}_{Z|X=x,\theta}\ [l_{hid}(\theta) ] = \sum_{i=1}^{L} \sum_{k \in [K]} \sum_{x \in \mathcal{X}} N_{n,kx} \cdot log(\theta_{n,kx})$.  
+Maximization of the sum above gives $\hat{\theta}_{n,kx} = \frac{N_{n,kx}}{\sum_{x} N_{n,kx}}$.
+
+
