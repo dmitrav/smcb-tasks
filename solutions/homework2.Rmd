@@ -27,8 +27,8 @@ $P(X,Z\ |\ \theta) = \prod_{i=1}^{N} P(X_i,Z\ |\ \theta) = \prod_{i=1}^{N} P(Z_i
 Since we assume the prior to be constant, the latter $\propto \prod_{i=1}^{N} \prod_{n=1}^{L} \theta_{n,Z_iX_{i}^{n}}= \prod_{i=1}^{N} \prod_{n=1}^{L} \prod_{k \in [K]} \prod_{x \in \mathcal{X}} \theta_{n,kx}^{I_{n,kx}(Z_i)},\ \Box$.
 
 ## c) E step of EM algorithm
-First, let's write down hidden (complete data) log-likelihood:
-$\mathcal{l}_{hid}(\theta) = log P(X,Z \ | \ \theta) = \sum_{i=1}^{N} \sum_{n=1}^{L} \sum_{k \in [K]} \sum_{x \in \mathcal{X}} I_{n,kx}(Z_i) \cdot log(\theta_{n,kx})$.
+First, let's write down hidden (complete data) log-likelihood:  
+$l_{hid}(\theta) = log P(X,Z \ | \ \theta) = \sum_{i=1}^{N} \sum_{n=1}^{L} \sum_{k \in [K]} \sum_{x \in \mathcal{X}} I_{n,kx}(Z_i) \cdot log(\theta_{n,kx})$.
 
 Now, the expected values of $Z_i$:
 $\text{E}_{Z|X=x,\theta}[Z_i] = \frac{P(X_i=x \ |\ Z_i = k)}{\sum_{k \in [K]} P(X_i=x \ |\ Z_i = k)} = \frac{\theta_{n,kx}}{\sum_{k \in [K]} \theta_{n,kx}} = \gamma^i_{n,kx}$.
