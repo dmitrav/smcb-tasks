@@ -1,0 +1,136 @@
+---
+title: "Homework 3"
+author: "Andrei Dmitrenko"
+date: "March 12, 2019"
+output:
+    pdf_document:
+html_document:
+df_print: paged
+---
+  
+# Task 6
+
+## Posterior state probabilities
+
+$P(Z_n = k\ |\ x) = \frac{P(Z_n=k,x)}{P(x)} = \frac{P(x_1,...,x_i,Z_n=k)P(x_{i+1},...,x_L\ |\ x_1,...,x_i,Z_n=k)}{P(x)} = \frac{P(x_1,...,x_i,Z_n=k)P(x_{i+1},...,x_L\ |\ Z_n=k)}{P(x)}$.  
+The last equality holds due to the Markov property.
+
+The proportionality constant is:  
+$c = \frac{1}{P(x)} = \frac{1}{\sum_{Z_n} P(x,Z_n)}$
+
+# Task 7
+
+$P(x_{1:n}, Z_n=k) = P(x_{1:n-1},Z_n=k)\ P(x_n\ |\ x_{1:n-1}, Z_n=k)$
+
+
+# Task 8
+
+$P(x_{n+1:L}\ |\ Z_n = k) = \sum_j P(Z_{n+1} = j, x_{n+1:L}\ |\ Z_n = k)$.
+
+Using chain rule:  
+$P(Z_{n+1} = j, x_{n+1:L}\ |\ Z_n = k) = P(x_{n+2:L}, x_{n+1}, Z_{n+1}=k\ |\ Z_n=l)$  
+$= P(x_{n+2:L}\ |\ x_{n+1}, Z_{n+1}=k, Z_n=l) \cdot P(x_{n+1}\ |\ Z_{n+1}=k, Z_n=l) \cdot P(Z_{n+1}=k\ |\ Z_n=l)$.
+
+Simplifying:  
+$P(Z_{n+1} = j, x_{n+1:L}\ |\ Z_n = k) = P(x_{n+2:L}\ |\ Z_{n+1}=k) \cdot P(x_{n+1}\ |\ Z_{n+1}=k) \cdot P(Z_{n+1}=k\ |\ Z_n=l)$.
+
+Substituting defition of $\beta_{k}(n+1)$ we get:  
+$\beta_k(n) = P(x_{n+1:L}\ |\ Z_n = k) = \sum_j P(Z_{n+1} = j\ |\ Z_n = k) \cdot P(x_{n+1}\ |\ Z_{n+1} = j) \cdot b_j(n+1),\ \Box$.
+
+
+# Task 9
+
+```{r}
+#' Extract a specific emission probability from \data{emission}.
+#'
+#' @param state The state of the hidden variable.
+#' @param observed The observed symbol.
+#' @return The probability of `state` emitting `observed`.
+#' @author Mathias Cardner
+getEmission <- function(state, observed) {
+  emission[state, observed]
+}
+
+
+#' Compute the forward quantity (message) at a given locus `n`.
+#'
+#' @param observed The observed symbol.
+#' @param previous The forward quantity at locus `n-1`.
+#' @return The forward quantity at the given locus.
+#' @author Mathias Cardner
+forward <- function(observed, previous) {
+  # Compute the forward quantity using a matrix multiplication formulation.
+  raw <- getEmission(c("+", "-"), observed) * transition %*% previous
+  # Scale the result in order to prevent underflow.
+  raw / sum(raw)
+}
+
+#' Compute the backward quantity (message) at a given locus `n`.
+#'
+#' @param observed The observed symbol.
+#' @param upcoming The backward quantity at locus `n+1`.
+#' @return The forward quantity at the given locus.
+#' @author Mathias Cardner
+backward <- function(observed, upcoming) {
+  # Compute the backward quantity using a matrix multiplication formulation.
+  raw <- transition %*% (getEmission(c("+", "-"), observed) * upcoming)
+  # Scale the result in order to prevent underflow.
+  raw / sum(raw)
+}
+```
+
+## a) Forward quantities
+
+```{r}
+load("../data/HMM_GC_enrichment.RData")
+
+# create a matrix for forward algorithm results
+forward.values = matrix(rep(0, 2 * length(x)), nrow=2, ncol = length(x))
+previous = c(0.5, 0.5)  # initial state
+
+# compute other values with a forward algorithm
+for (i in 1:length(x)){
+  forward.values[,i] = forward(x[i], previous)
+  previous = forward.values[,i]
+}
+
+forward.values[,1:10]
+```
+
+## b) Backward quantities
+
+```{r}
+# create a matrix for forward algorithm results
+backward.values = matrix(rep(0, 2 * length(x)), nrow=2, ncol = length(x))
+upcoming = c(1,1)  # initial state
+
+# compute other values with a backward algorithm
+for (j in length(x):1){
+  backward.values[,j] = backward(x[j], upcoming)
+  upcoming = backward.values[,j]
+}
+
+backward.values[,1:10]
+
+```
+
+## c) Posterior state
+
+```{r}
+
+# multiply results
+multiplied.values = forward.values * backward.values
+# scale results
+scaled.multiplied.values = apply(multiplied.values, 2, function(x){ x / sum(x) })
+
+scaled.multiplied.values[,1:10]
+
+```
+
+## d) Plot
+
+```{r}
+# plot
+plot(Z == "+")
+lines(Z == "+" & x == "C", col="lightblue")
+```
