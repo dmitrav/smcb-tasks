@@ -36,28 +36,31 @@ backward <- function(observed, upcoming) {
 }
 
 
-# NOT SURE AT ALL
-
-# create a list for forward algorithm results and add the first value for initial state
-forward.values = list(data.matrix(c(0.5,0.5)) %*% getEmission(c("+", "-"), x[1]) * transition)
+# create a matrix for forward algorithm results
+forward.values = matrix(rep(0, 2 * length(x)), nrow=2, ncol = length(x))
+previous = c(0.5, 0.5)  # initial state
 
 # compute other values with a forward algorithm
-for (i in 2:length(x)){
-    forward.values[[i]] = forward(x[i], forward.values[[i-1]])
+for (i in 1:length(x)){
+  forward.values[,i] = forward(x[i], previous)
+  previous = forward.values[,i]
 }
 
-# create a list for forward algorithm results and add the first value for initial state
-backward.values = list( transition %*% (data.matrix(c(1,1)) %*% getEmission(c("+", "-"), x[300])) )
+# create a matrix for forward algorithm results
+backward.values = matrix(rep(0, 2 * length(x)), nrow=2, ncol = length(x))
+upcoming = c(1,1)  # initial state
 
 # compute other values with a backward algorithm
-for (i in 1:(length(x)-1) ){
-  backward.values[[i+1]] = backward(x[length(x)-i], backward.values[[i]])
+for (j in length(x):1){
+  backward.values[,j] = backward(x[j], upcoming)
+  upcoming = backward.values[,j]
 }
 
-forward.values[[1]] %*% backward.values[[1]]
+# multiply results
+multiplied.values = forward.values * backward.values
+# scale results
+scaled.multiplied.values = apply(multiplied.values, 2, function(x){ x / sum(x) })
 
-transition %*% (getEmission(c("+", "-"), x[299]) * upcoming)
-
-
-
+plot(Z == "+")
+lines(Z == "+" & x == "C", col="lightblue")
 
