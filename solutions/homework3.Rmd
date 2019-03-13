@@ -20,21 +20,27 @@ $c = \frac{1}{P(x)} = \frac{1}{\sum_{Z_n} P(x,Z_n)}$
 
 # Task 7
 
-$P(x_{1:n}, Z_n=k) = P(x_{1:n-1},Z_n=k)\ P(x_n\ |\ x_{1:n-1}, Z_n=k)$
+$P(x_{1:n}, Z_n=k) = \sum_j P(x_{1:n-1}, x_n, Z_{n-1}=j, Z_n=k)$  
 
+Breaking down the right part:  
+$P(x_{1:n-1}, x_n, Z_{n-1}=j, Z_n=k) = P(x_n\ |\ Z_n=k) \cdot P(Z_n=k\ |\ Z_{n-1}=j) \cdot P(x_{1:n-1},Z_{n-1}=j)$.
+
+Substituting defition of $f_{k}(n)$ we get:  
+$P(x_{1:n}, Z_n=k) = \sum_j P(x_n\ |\ Z_n=k) \cdot P(Z_n=k\ |\ Z_{n-1}=j) \cdot f_{j}(n-1)$  
+$= P(x_n\ |\ Z_n=k)\ \sum_j P(Z_n=k\ |\ Z_{n-1}=j) \cdot f_{j}(n-1),\ \Box$.
 
 # Task 8
 
 $P(x_{n+1:L}\ |\ Z_n = k) = \sum_j P(Z_{n+1} = j, x_{n+1:L}\ |\ Z_n = k)$.
 
 Using chain rule:  
-$P(Z_{n+1} = j, x_{n+1:L}\ |\ Z_n = k) = P(x_{n+2:L}, x_{n+1}, Z_{n+1}=k\ |\ Z_n=l)$  
-$= P(x_{n+2:L}\ |\ x_{n+1}, Z_{n+1}=k, Z_n=l) \cdot P(x_{n+1}\ |\ Z_{n+1}=k, Z_n=l) \cdot P(Z_{n+1}=k\ |\ Z_n=l)$.
+$P(Z_{n+1} = j, x_{n+1:L}\ |\ Z_n = k) = P(x_{n+2:L}, x_{n+1}, Z_{n+1}=j\ |\ Z_n=k)$  
+$= P(x_{n+2:L}\ |\ x_{n+1}, Z_{n+1}=j, Z_n=k) \cdot P(x_{n+1}\ |\ Z_{n+1}=j, Z_n=k) \cdot P(Z_{n+1}=j\ |\ Z_n=k)$.
 
 Simplifying:  
-$P(Z_{n+1} = j, x_{n+1:L}\ |\ Z_n = k) = P(x_{n+2:L}\ |\ Z_{n+1}=k) \cdot P(x_{n+1}\ |\ Z_{n+1}=k) \cdot P(Z_{n+1}=k\ |\ Z_n=l)$.
+$P(Z_{n+1} = j, x_{n+1:L}\ |\ Z_n = k) = P(x_{n+2:L}\ |\ Z_{n+1}=j) \cdot P(x_{n+1}\ |\ Z_{n+1}=j) \cdot P(Z_{n+1}=j\ |\ Z_n=k)$.
 
-Substituting defition of $\beta_{k}(n+1)$ we get:  
+Substituting defition of $\beta_{k}(n)$ we get:  
 $\beta_k(n) = P(x_{n+1:L}\ |\ Z_n = k) = \sum_j P(Z_{n+1} = j\ |\ Z_n = k) \cdot P(x_{n+1}\ |\ Z_{n+1} = j) \cdot b_j(n+1),\ \Box$.
 
 
@@ -130,7 +136,8 @@ scaled.multiplied.values[,1:10]
 ## d) Plot
 
 ```{r}
-# plot
+# P(Z = '+')
 plot(Z == "+")
+# P(Z = '+' | X = 'C')
 lines(Z == "+" & x == "C", col="lightblue")
 ```
