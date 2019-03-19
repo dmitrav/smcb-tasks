@@ -62,12 +62,12 @@ Since the begin state (state 0) is assumed to be 'M', there are only 3 possible 
 
 ## State 2
 
-- $t_2(\text{M} \rightarrow \text{M}) = \frac{0+1}{(0+1)+(3+1)+(0+1)}= \frac{1}{6}$.  
-- $t_2(\text{M} \rightarrow \text{I}) = \frac{3+1}{(0+1)+(3+1)+(0+1)}= \frac{2}{3}$.  
-- $t_2(\text{M} \rightarrow \text{D}) = \frac{0+1}{(0+1)+(3+1)+(0+1)}= \frac{1}{6}$.  
-- $t_2(\text{I} \rightarrow \text{M}) = \frac{0+1}{(0+1)+(0+1)+(0+1)}= \frac{1}{3}$.  
-- $t_2(\text{I} \rightarrow \text{I}) = \frac{0+1}{(0+1)+(0+1)+(0+1)}= \frac{1}{3}$.  
-- $t_2(\text{I} \rightarrow \text{D}) = \frac{0+1}{(0+1)+(0+1)+(0+1)}= \frac{1}{3}$.  
+- $t_2(\text{M} \rightarrow \text{M}) = \frac{2+1}{(2+1)+(1+1)+(0+1)}= \frac{1}{2}$.  
+- $t_2(\text{M} \rightarrow \text{I}) = \frac{1+1}{(2+1)+(1+1)+(0+1)}= \frac{1}{3}$.  
+- $t_2(\text{M} \rightarrow \text{D}) = \frac{0+1}{(2+1)+(1+1)+(0+1)}= \frac{1}{6}$.  
+- $t_2(\text{I} \rightarrow \text{M}) = \frac{2+1}{(2+1)+(3+1)+(1+1)}= \frac{1}{3}$.  
+- $t_2(\text{I} \rightarrow \text{I}) = \frac{3+1}{(2+1)+(3+1)+(1+1)}= \frac{4}{9}$.  
+- $t_2(\text{I} \rightarrow \text{D}) = \frac{1+1}{(2+1)+(3+1)+(1+1)}= \frac{2}{9}$.  
 - $t_2(\text{D} \rightarrow \text{M}) = \frac{0+1}{(0+1)+(2+1)+(0+1)}= \frac{1}{5}$.  
 - $t_2(\text{D} \rightarrow \text{I}) = \frac{2+1}{(0+1)+(2+1)+(0+1)}= \frac{3}{5}$.  
 - $t_2(\text{D} \rightarrow \text{D}) = \frac{0+1}{(0+1)+(0+1)+(0+1)}= \frac{1}{5}$.  
