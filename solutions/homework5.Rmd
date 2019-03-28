@@ -1,0 +1,86 @@
+---
+title: "Homework 5"
+author: "Andrei Dmitrenko"
+date: "March 28, 2019"
+output:
+    pdf_document:
+html_document:
+df_print: paged
+---
+  
+# Task 11
+
+## Connecting the transition matrix to the rate matrix
+
+$\frac{d\textbf{P}(t)}{dt} = \frac{\textbf{P}(t+dt) - \textbf{P}(t)}{dt} = \frac{\textbf{P}(t)\cdot \textbf{P}(dt) - \textbf{P}(t)}{dt} =$  
+$= \frac{\textbf{P}(t)\cdot (\textbf{P}(0)+\textbf{R}dt) - \textbf{P}(t)}{dt} = \frac{\textbf{P}(t)\cdot \textbf{P}(0) + \textbf{P}(t)\cdot \textbf{R}dt - \textbf{P}(t)}{dt} =$  
+$= \textbf{P}(t)\cdot \textbf{R}+ \frac{\textbf{P}(t)\cdot \textbf{P}(0)}{dt} - \frac{\textbf{P}(t)}{dt} = \textbf{P}(t)\cdot \textbf{R}$, since $\textbf{P}(0)=\textbf{I}$.
+
+# Task 12
+
+## Connecting the rate matrix to the stationary distribution
+
+$\textbf{R}\vec{\pi} = \vec{0}$.  
+$\textbf{P}(dt)\vec{\pi} = (\textbf{P}(0)+\textbf{R}dt)\vec{\pi} = \vec{\pi} + \textbf{R}\vec{\pi}dt = \vec{\pi} = \pi$.  
+The latter implies $\textbf{R}\vec{\pi} = \vec{0}$.
+
+# Task 14
+
+```{r}
+library("phangorn")
+
+data = read.dna("../data/ParisRT.txt")
+
+# pairwise distances between sequences (Kimura model)
+distance = dist.dna(data)
+
+# create an initial tree topology for the alignment
+initial.topology = nj(distance)
+
+# plotting topology
+plot(initial.topology)
+```
+
+```{r}
+# fitting model to the data
+fit = pml(initial.topology, data = phyDat(data), model = "K80")
+
+# log-likelihood value
+fit$logLik
+```
+
+```{r}
+# optimise Q
+fit.q = optim.pml(fit, optQ = TRUE)
+
+# lower triangular part of the rate matrix
+fit.q$Q
+
+# the rate matrix
+rm = matrix(0, 4, 4)
+rm[upper.tri(rm, diag=FALSE)] <- fit.q$Q
+rm[lower.tri(rm, diag=FALSE)] <- fit.q$Q
+rm
+```
+
+```{r}
+# optimise Q, edges, topology
+fit.qet = optim.pml(fit, optQ = TRUE, optEdge = TRUE, optNni = TRUE)
+
+# optimised log-likelihood
+fit.qet$logLik
+```
+
+```{r include=FALSE}
+# bootstrap: resampling alignments to optimize edge weights and topology
+bs <- bootstrap.pml(fit.qet, bs=100, optNni=TRUE)
+```
+
+```{r}
+# plot shows: Mme S is more likely to have infected the patient Mme S 
+treeBS <- plotBS(fit.qet$tree, bs, type = "phylogram")
+
+```
+
+
+
