@@ -1,0 +1,138 @@
+---
+title: "Homework 6"
+author: "Andrei Dmitrenko"
+date: "April 3, 2019"
+output:
+    pdf_document:
+html_document:
+df_print: paged
+---
+  
+# Task 15
+
+## Monte Carlo estimation of an expected value
+
+1. $\mathop{\mathbb{E}} (\hat{g}(X)) = \mathop{\mathbb{E}} \left( \frac{1}{n}\sum_{i=1}^N g(X_i) \right) =  \frac{1}{n} \sum_{i=1}^N \mathop{\mathbb{E}} (g(X_i)) = \mathop{\mathbb{E}} (g(X)),\ \Box$.  
+
+2. Using Bienayme's identity,  
+$\text{Var}(\hat{g}(X)) = \text{Var} \left( \frac{1}{n} \sum_{i=1}^N g(X_i) \right) = \frac{n\ \text{Var}( g(X_i)}{n^2} = \frac{\text{Var}( g(X_i)}{n},\ \Box$.
+
+
+
+# Task 16
+
+##  Simulating gene expression using a Gibbs sampler
+
+```{r}
+load("../data/sampling.rda")
+
+# means and covariances
+means = apply(gene.expression, 2, mean)
+covariances = cov(gene.expression)
+```
+
+```{r}
+
+markov.blanket = function(node.index, adjacency.matrix){
+  
+  node.children = which(adjacency.matrix[node.index, ] == 1)
+  node.parents = which(adjacency.matrix[ ,node.index] == 1)
+  node.coparents = which(which(adjacency.matrix[ ,node.children] == 1) != node.index)
+  
+  unique(c(node.children, node.parents, node.coparents))
+}
+
+markov.blanket(3, gene.adjacency.matrix)
+
+```
+
+```{r}
+# create matrix to store results
+particles.matrix = matrix(0, nrow = 1, ncol = 5)
+colnames(particles.matrix) = colnames(gene.expression)
+
+# initialise matrix
+x0 = c(means[1:2], 0, means[4], 0)
+particles.matrix[1,] = x0
+
+# define constants
+inversed.sigma.z1 = solve(covariances[-3,-3])
+inversed.sigma.z2 = solve(covariances[-5,-5])
+
+sigma.i.z1 = covariances[3,-3]
+sigma.i.z2 = covariances[5,-5]
+
+sigma.not_i.z1 = covariances[-3,3]
+sigma.not_i.z2 = covariances[-5,5]
+
+sigma.ii.z1 = covariances[3,3]
+sigma.ii.z2 = covariances[5,5]
+
+# sample
+for (i in 1:11000){
+  
+  particle = particles.matrix[i,]
+  
+  # update means
+  if (i == 1){
+    means = particles.matrix[1,]
+  } else {
+    means = particles.matrix[i-1,]
+    means[3] = mean(particles.matrix[,3])
+    means[5] = mean(particles.matrix[,5])
+  }
+  
+  # compute new parameters for YER124C
+  beta0 = (means[3] - sigma.i.z1 %*% inversed.sigma.z1 %*% means[-3])
+  beta = inversed.sigma.z1 %*% sigma.not_i.z1
+  sigma.squared = sigma.ii.z1 - sigma.i.z1 %*% inversed.sigma.z1 %*% sigma.not_i.z1
+  
+  # draw new value for YER124C
+  particle[3] = rnorm(1, beta0 + particle[-3] %*% beta, sigma.squared)
+  
+  # update means
+  means[3] = mean(c(particles.matrix[,3], particle[3]))
+  
+  # compute new parameters for YNL327W
+  beta0 = (means[5] - sigma.i.z2 %*% inversed.sigma.z2 %*% means[-5])
+  beta = inversed.sigma.z2 %*% sigma.not_i.z2
+  sigma.squared = sigma.ii.z2 - sigma.i.z2 %*% inversed.sigma.z2 %*% sigma.not_i.z2
+  
+  # draw new value for YNL327W
+  particle[5] = rnorm(1, beta0 + particle[-5] %*% beta, sigma.squared)
+  
+  # add particle to the matrix
+  particles.matrix = rbind(particles.matrix, particle)
+
+}
+
+# isolating genes of interest from burn-in and other genes
+particles.matrix = particles.matrix[-(1:1000), c(3,5)]
+```
+
+```{r}
+# plotting samples
+library(RColorBrewer)
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))
+r <- rf(32)
+
+library(hexbin)
+h1 = hexbin(particles.matrix)
+plot(h1, colramp=rf)
+```
+
+Since we made an assumption that this is a multivariate Gaussian, we see two Gaussians on the plot.  
+
+```{r}
+# means
+sampled.means = apply(particles.matrix, 2, mean)
+initial.means = apply(gene.expression, 2, mean)[c(3,5)]
+
+sampled.means
+initial.means
+```
+
+Means are clearly different. However, initial means could converge to the ones we get from sampling if we had gathered more data. So, there's no strong disagreement between sampling results and initial estimates from small data.
+
+
+
