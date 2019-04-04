@@ -71,7 +71,7 @@ fit.qet = optim.pml(fit, optQ = TRUE, optEdge = TRUE, optNni = TRUE)
 fit.qet$logLik
 ```
 
-```{r include=FALSE}
+```{r results="hide"}
 # bootstrap: resampling alignments to optimize edge weights and topology
 bs <- bootstrap.pml(fit.qet, bs=100, optNni=TRUE)
 ```
