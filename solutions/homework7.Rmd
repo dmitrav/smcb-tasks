@@ -14,7 +14,7 @@ df_print: paged
 
 1. In the given equation for $P(X_4=1)$ there are 4 sums over 2 possible variable values each. Thus, the computational complexity is $2^4$, which means there are 16 terms in the total sum.
 
-2. For the general case of the chain of length $N$ with $K$ values in each node the complexity is $K^N$, i.e. it grows exponentially in chain length.
+2. For the general case of the chain of length $N$ with $K$ values in each node the complexity is $K^{N-1}$, i.e. it grows exponentially in chain length.
 
 # Task 21
 
@@ -30,10 +30,10 @@ $\mu_{\beta}(x_n) = \sum_{x_{n+1}} \psi_{n,n+1} (x_{n},x_{n+1}) \cdot \mu_{\beta
 
 ## Benefit of storing messages
 
-1. In the lecture it was shown that in general case message passing algorithm implies complexity of $O(NK^2)$, where $N$ is the number of nodes in the chain, and $K$ is the number of possible values of each node.
+1. In the lecture it was shown that in general case message passing algorithm for one node implies complexity of $O(NK^2)$, where $N$ is the number of nodes in the chain, and $K$ is the number of possible values of each node.
 
 2. Following the formula above, the computational complexity for $P(X_4=1)$ is $4 \cdot 2^2 = 16$.  
-The complexity of computing all marginal probability distributions is also 16, if all the messages are stored.
+If messages are stored, the complexity of computing all marginal probability distributions is $O(N^2K^2)$, as it requires going forward and backward along the chain.
 
 # Task 23
 
