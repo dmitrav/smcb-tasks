@@ -1,0 +1,167 @@
+
+# define Phis for 2 graphs
+Phi.1 = matrix(rep(0,25), nrow = 5, ncol = 5)
+Phi.2 = matrix(rep(0,25), nrow = 5, ncol = 5)
+
+# hardcoding edges
+Phi.1[1, c(1,2,3)] = 1
+Phi.1[2, c(2,3,5)] = 1
+Phi.1[3, c(3,5)] = 1
+Phi.1[4, c(4,5)] = 1
+Phi.1[5, 5] = 1
+
+Phi.2[1, c(1,3)] = 1
+Phi.2[2, c(1,2,3,5)] = 1
+Phi.2[3, c(3,5)] = 1
+Phi.2[4, c(4,5)] = 1
+Phi.2[5, 5] = 1
+
+# define Thetas for 2 graphs
+Theta.1 = matrix(rep(0,30), nrow = 5, ncol = 6)
+Theta.2 = matrix(rep(0,30), nrow = 5, ncol = 6)
+
+# hardcoding edges
+Theta.1[2, c(1,2)] = 1
+Theta.1[3, c(3)] = 1
+Theta.1[4, c(4,6)] = 1
+Theta.1[5, c(5)] = 1
+
+Theta.2[1, c(1,2)] = 1
+Theta.2[3, c(3)] = 1
+Theta.2[4, c(4,6)] = 1
+Theta.2[5, c(5)] = 1
+
+# computing effect patterns
+F.1 = Phi.1 %*% Theta.1
+F.2 = Phi.2 %*% Theta.2
+
+
+
+# finding transformation matrix
+inversed.A = solve(Phi.1, Phi.2)
+A = solve(inversed.A)
+# check correctness
+sum(A %*% Theta.1 == Theta.2) == nrow(Theta.2) * ncol(Theta.2)
+
+
+
+library("nem")
+
+# define Ds for 2 graphs
+D.1 = matrix(rep(0,30), nrow = 6, ncol = 5)
+D.2 = matrix(rep(0,30), nrow = 6, ncol = 5)
+
+colnames(D.1) = c("S1", "S2", "S3", "S4", "S5")
+colnames(D.2) = c("S1", "S2", "S3", "S4", "S5")
+
+# hardcoding edges
+D.1[c(1,2,3,5), 1] = 1
+D.1[c(1,2,3,5), 2] = 1
+D.1[c(3,5), 3] = 1
+D.1[c(4,5,6), 4] = 1
+D.1[c(5), 5] = 1
+
+D.2[c(1,2,3,5), 1] = 1
+D.2[c(1,2,3,5), 2] = 1
+D.2[c(3,5), 3] = 1
+D.2[c(4,5,6), 4] = 1
+D.2[c(5), 5] = 1
+
+# applying nem to get mLLs
+control = set.default.parameters(unique(colnames(D.1)), para=c(0.1, 0.1))
+
+res.1 <- nem(D.1, inference="search", control=control)
+max(res.1$mLL)
+
+res.2 <- nem(D.2, inference="search", control=control)
+max(res.2$mLL)
+
+
+
+# hidden Markov NEMs
+
+# define adjacency matrices
+adj.matrix.u = matrix(rep(0,16), nrow=4)
+colnames(adj.matrix.u) = c("S1", "S2", "S3", "S4")
+rownames(adj.matrix.u) = c("S1", "S2", "S3", "S4")
+
+adj.matrix.u[1, c(1,2,3,4)] = 1
+adj.matrix.u[2, c(2,4)] = 1
+adj.matrix.u[3, c(3,4)] = 1
+adj.matrix.u[4, 4] = 1
+
+adj.matrix.v1 = matrix(rep(0,16), nrow=4)
+colnames(adj.matrix.v1) = c("S1", "S2", "S3", "S4")
+rownames(adj.matrix.v1) = c("S1", "S2", "S3", "S4")
+
+adj.matrix.v1[1, c(1,2,3,4)] = 1
+adj.matrix.v1[2, c(2,4)] = 1
+adj.matrix.v1[3, 3] = 1
+adj.matrix.v1[4, 4] = 1
+
+adj.matrix.v2 = matrix(rep(0,16), nrow=4)
+colnames(adj.matrix.v2) = c("S1", "S2", "S3", "S4")
+rownames(adj.matrix.v2) = c("S1", "S2", "S3", "S4")
+
+adj.matrix.v2[1, 1] = 1
+adj.matrix.v2[2, c(2,3,4)] = 1
+adj.matrix.v2[3, 3] = 1
+adj.matrix.v2[4, c(1,4)] = 1
+
+s.u.v1 = 0
+s.u.v2 = 0
+
+# calculating distances
+for (i in 1:nrow(adj.matrix.u)){
+  for (j in 1:ncol(adj.matrix.u)){
+    s.u.v1 = s.u.v1 + abs( adj.matrix.u[i,j] - adj.matrix.v1[i,j] )
+    s.u.v2 = s.u.v2 + abs( adj.matrix.u[i,j] - adj.matrix.v2[i,j] )
+  }
+}
+
+# all possible graph structures
+all.models = enumerate.models(c("S1", "S2", "S3", "S4"))
+
+# data structure to store transition probabilities
+transition.probs = matrix(rep(0, 9*2), nrow=2)
+colnames(transition.probs) = c("l=0.1","l=0.2","l=0.3","l=0.4","l=0.5","l=0.6","l=0.7","l=0.8","l=0.9")
+rownames(transition.probs) = c("u->v1", "u->v2")
+
+# calculating transition probabilities
+for (lambda in 1:9){
+  
+  # calculate normalizing constant z.u for current lambda
+  z.u = 0
+  for (m in 1:length(all.models)){
+    # calculate distance to graph structure m
+    s.u.m = 0
+    for (i in 1:nrow(adj.matrix.u)){
+      for (j in 1:ncol(adj.matrix.u)){
+        s.u.m = s.u.m + abs( adj.matrix.u[i,j] - all.models[[m]][i,j] )
+      }
+    }
+    # add to the sum over all graph structures
+    z.u = z.u + 0.1 * lambda * (1 - 0.1 * lambda) ** s.u.m
+  }
+  
+  # calculate transitions probabilities for v1 and v2 for current lambda
+  transition.probs[1, lambda] = (0.1 * lambda * (1 - 0.1 * lambda) ** s.u.v1) / z.u
+  transition.probs[2, lambda] = (0.1 * lambda * (1 - 0.1 * lambda) ** s.u.v2) / z.u
+}
+
+max(transition.probs)
+
+# plotting probabilities
+# with increasing the smoothing parameter the probability to make transition to v1 grows up
+# this is because v1 structure is less different from u than v2 
+plot(1:9/10, transition.probs[1,], type="b", col="red", xlab = "Lambda", ylab = "Transition probabilities", xlim = c(0.1,0.9), ylim=c(0,0.1))
+lines(1:9/10, transition.probs[2,], type="b", col="blue", lty=2)
+legend("topright", legend=c("transition u -> v1", "transition u -> v2"), col=c("red", "blue"), lty=1:2)
+
+
+
+
+
+
+
+
