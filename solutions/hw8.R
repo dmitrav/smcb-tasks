@@ -44,7 +44,6 @@ A = solve(inversed.A)
 sum(A %*% Theta.1 == Theta.2) == nrow(Theta.2) * ncol(Theta.2)
 
 
-
 library("nem")
 
 # define Ds for 2 graphs
@@ -69,13 +68,13 @@ D.2[c(5), 5] = 1
 
 # applying nem to get mLLs
 control = set.default.parameters(unique(colnames(D.1)), para=c(0.1, 0.1))
+models.list = list(Phi.1, Phi.2)
 
-res.1 <- nem(D.1, inference="search", control=control)
-max(res.1$mLL)
+res.1 = nem(D.1, models = models.list, control=control)
+res.2 = nem(D.2, models = models.list, control=control)
 
-res.2 <- nem(D.2, inference="search", control=control)
-max(res.2$mLL)
-
+res.1$mLL
+res.2$mLL
 
 
 # hidden Markov NEMs
@@ -159,9 +158,77 @@ lines(1:9/10, transition.probs[2,], type="b", col="blue", lty=2)
 legend("topright", legend=c("transition u -> v1", "transition u -> v2"), col=c("red", "blue"), lty=1:2)
 
 
+# mixture NEMs
+# define Phis for 2 graphs
+Phi.F1 = matrix(rep(0,4), nrow = 2)
+Phi.F2 = matrix(rep(0,4), nrow = 2)
 
+# hardcoding edges
+Phi.F1[1, c(1,2)] = 1
+Phi.F1[2, 2] = 1
 
+Phi.F2[1, 1] = 1
+Phi.F2[2, c(1,2)] = 1
 
+# define Thetas for 2 graphs
+Theta.F1 = matrix(rep(0,4), nrow = 2, ncol = 2)
+Theta.F2 = matrix(rep(0,4), nrow = 2, ncol = 2)
 
+# hardcoding edges
+Theta.F1[1, 1] = 1
+Theta.F1[2, 2] = 1
+
+Theta.F2[1, 2] = 1
+Theta.F2[2, 1] = 1
+
+# define perturbation map based on given data
+ro = matrix(rep(0,8), nrow = 2, ncol = 4)
+colnames(ro) = c("c1", "c2", "c3", "c4")
+rownames(ro) = c("e1", "e2")
+
+ro[1, c(1,3)] = 1
+ro[2, c(2,3,4)] = 1
+
+# compute the expected effect patterns
+expected.effects.F1 = t(t(ro) %*% Phi.F1 %*% Theta.F1)
+expected.effects.F2 = t(t(ro) %*% Phi.F2 %*% Theta.F2)
+
+# replace zeros by -1s (why?)
+expected.effects.F1[expected.effects.F1 == 0] = -1
+expected.effects.F2[expected.effects.F2 == 0] = -1
+
+# combine expected effects to obtain log odds matrix R
+expected.effects = cbind(expected.effects.F1[,1:2], expected.effects.F2[,3:4])  # is it R?
+
+# define mixture weights
+pis = c(0.32, 0.68)
+L1 = t(ro) %*% Phi.F1 %*% Theta.F1 %*% expected.effects
+L2 = t(ro) %*% Phi.F2 %*% Theta.F2 %*% expected.effects
+Ls = list(L1, L2)
+
+# calculating responsibilities
+responsibilities = matrix(rep(0,8), nrow = 2)
+rownames(responsibilities) = c("F1", "F2")
+colnames(responsibilities) = colnames(ro)
+
+for (k in 1:2){
+  for (i in 1:4){
+    
+    denominator = 0
+    for (j in 1:2){
+      denominator = denominator + pis[j] * exp(Ls[[j]][i,i])
+    }
+    
+    responsibilities[k,i] = pis[k] * exp(Ls[[k]][i,i]) / denominator
+  }
+}
+
+# round the probabilities
+belongings = responsibilities
+belongings[belongings >= 0.5] = 1
+belongings[belongings < 0.5] = 0
+
+# cells 1,2 belong to F1, cells 3,4 belong to F2
+belongings
 
 
