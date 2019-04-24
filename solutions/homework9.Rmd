@@ -1,0 +1,104 @@
+---
+title: "Homework 9"
+author: "Andrei Dmitrenko"
+date: "April 24, 2019"
+output:
+    pdf_document:
+html_document:
+df_print: paged
+---
+
+# Task 30
+
+## D-separation
+
+1. $F,\ E$ are d-separated from A given ${G,\ D}$.  
+
+2.    
+A. true.  
+B. false, since there's another path from G to E through C.  
+C. false.  
+D. true, since $MB(E) = F$.  
+
+# Task 31
+
+## Testing for marginal correlation
+
+```{r}
+data = readRDS("../data/MVN_DAG.rds")
+
+# plotting shows no correlation
+attach(data)
+plot(A, B, main="Scatterplot", xlab="A", ylab="B")
+```
+
+We see no correlation. It agrees with the graph structure, since A | B.  
+
+```{r}
+# testing correlations
+correlation.results = cor.test(data$A, data$B)
+
+correlation.results$estimate
+correlation.results$p.value
+```
+
+Test confirms there's no correlation.  
+
+# Task 32
+
+## Testing for partial correlation
+
+```{r}
+# regression A to C
+ac.regression = lm(A ~ C, data = data)
+ac.residuals = residuals(ac.regression)
+
+# regression B to C
+bc.regression = lm(B ~ C, data = data)
+bc.residuals = residuals(bc.regression)
+
+# plotting residuals
+plot(ac.residuals, bc.residuals, main="Residuals", xlab="A ~ C", ylab="B ~ C")
+```
+
+I see weak negative correlation on the plot.  
+
+```{r}
+# correlation test for residuals
+cor.test(ac.residuals, bc.residuals)
+```
+
+Test confirms, there's negative correlation of residuals, which agrees with the expectation,
+since A and B are not independent given C.  
+
+# Task 33
+
+## Running the PC algorithm
+
+```{r}
+# PC algorithm
+library(pcalg)
+
+suffStat = list(C = cor(data), n = nrow(data))
+
+pc.results.1 = pc(suffStat = suffStat, indepTest = gaussCItest, alpha = 1, labels = colnames(data), verbose=FALSE)
+pc.results.2 = pc(suffStat = suffStat, indepTest = gaussCItest, alpha = 0.5, labels = colnames(data), verbose=FALSE)
+pc.results.3 = pc(suffStat = suffStat, indepTest = gaussCItest, alpha = 0.2, labels = colnames(data), verbose=FALSE)
+pc.results.4 = pc(suffStat = suffStat, indepTest = gaussCItest, alpha = 0.01, labels = colnames(data), verbose=TRUE)
+
+par(mfrow=c(2,2))
+plot(pc.results.1, main="Alpha = 1")
+plot(pc.results.2, main="Alpha = 0.5")
+plot(pc.results.3, main="Alpha = 0.25")
+plot(pc.results.4, main="Alpha = 0.01")
+```
+
+The algorithm successfully learn the graph structure, provided a reasonable significance level alpha is specified. In this case the correct graph structure is obtained for $\alpha<0.15$. The structure obtained with $\alpha=0.01$ is shown on the plot.  
+
+With increasing alpha we relax the threshold for correlation which results in highly interconnected graph structures.  
+
+
+
+
+
+
