@@ -1,0 +1,46 @@
+---
+title: "Homework 10"
+author: "Andrei Dmitrenko"
+date: "May 3, 2019"
+output:
+    pdf_document:
+html_document:
+df_print: paged
+---
+
+# Task 34
+
+## Uniqueness of predictions from the lasso
+
+1. Suppose that we have two solutions $\hat \beta^{(1)}$ and $\hat \beta^{(2)}$ with $X \hat \beta^{(1)} \neq X \hat \beta^{(2)} $.  
+Let $c$ be the min value of the lasso criterion obtained by $\hat \beta^{(1)}$, $\hat \beta^{(2)}$. For any $0 < \alpha < 1$, we have:  
+$$ \frac{1}{2}  \| y - X (\alpha \cdot \beta^{(1)} + (1 - \alpha) \cdot \beta^{(2)} \|_2^2 + \lambda \| \alpha \cdot \beta^{(1)} + (1 - \alpha) \cdot \beta^{(2)} \|_1 < \alpha\cdot c\ + (1 - \alpha) \cdot c = c$$.
+
+The strict inequality is because the function $f(u) = \|y − u\|^2_2$ is strictly convex, as well as $f(u) = \|u\|_1$. Therefore, $\alpha \cdot \beta^{(1)} + (1 − \alpha) \cdot \beta^{(2)}$ attains a lower criterion value than $c$, which gives a contradiction, $\square$.
+
+2. By 1., any two solutions must have the same squared error loss. But the solutions also attain the same value of the lasso criterion, and if $\lambda > 0$, then they must have the same $l_1$ norm, $\square$.
+
+# Task 35
+
+## Ridge regression solution
+
+$$RSS(\lambda) = y^T y - 2 \beta X^Ty + \beta^T X^T X \beta + \lambda \beta^T \beta.$$
+$$\frac{d RSS(\lambda)}{d\beta}  = - 2 X^Ty + 2 X^T X \beta + 2 \lambda \beta = 0.$$
+Hence,  
+$$X^T X \beta + \lambda \beta = X^Ty,$$
+which gives:
+$$\beta = (X^T X + \lambda)^{-1} X^Ty,\ \square.$$
+
+# Task 36
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
