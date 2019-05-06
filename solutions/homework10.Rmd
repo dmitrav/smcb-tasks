@@ -12,11 +12,11 @@ df_print: paged
 
 ## Uniqueness of predictions from the lasso
 
-1. Suppose that we have two solutions $\hat \beta^{(1)}$ and $\hat \beta^{(2)}$ with $X \hat \beta^{(1)} \neq X \hat \beta^{(2)} $.  
-Let $c$ be the min value of the lasso criterion obtained by $\hat \beta^{(1)}$, $\hat \beta^{(2)}$. For any $0 < \alpha < 1$, we have:  
-$$ \frac{1}{2}  \| y - X (\alpha \cdot \beta^{(1)} + (1 - \alpha) \cdot \beta^{(2)} \|_2^2 + \lambda \| \alpha \cdot \beta^{(1)} + (1 - \alpha) \cdot \beta^{(2)} \|_1 < \alpha\cdot c\ + (1 - \alpha) \cdot c = c$$.
+1. Suppose that we have two solutions $\hat{\beta}^{(1)}$ and $\hat{\beta}^{(2)}$ with $X \hat{\beta}^{(1)} \neq X \hat{\beta}^{(2)}$.  
+Let $c$ be the min value of the lasso criterion obtained by $\hat{\beta}^{(1)}$, $\hat{\beta}^{(2)}$. For any $0 < \alpha < 1$, we have:  
+$$\frac{1}{2}  \| y - X (\alpha \cdot \beta^{(1)} + (1 - \alpha) \cdot \beta^{(2)} \|_2^2 + \lambda \| \alpha \cdot \beta^{(1)} + (1 - \alpha) \cdot \beta^{(2)} \|_1 < \alpha\cdot c\ + (1 - \alpha) \cdot c = c.$$
 
-The strict inequality is because the function $f(u) = \|y − u\|^2_2$ is strictly convex, as well as $f(u) = \|u\|_1$. Therefore, $\alpha \cdot \beta^{(1)} + (1 − \alpha) \cdot \beta^{(2)}$ attains a lower criterion value than $c$, which gives a contradiction, $\square$.
+The strict inequality is because the function $f(u) = \|y - u\|^2_2$ is strictly convex, as well as $f(u) = \|u\|_1$. Therefore, $\alpha \cdot \beta^{(1)} + (1 - \alpha) \cdot \beta^{(2)}$ attains a lower criterion value than $c$, which gives a contradiction, $\square$.
 
 2. By 1., any two solutions must have the same squared error loss. But the solutions also attain the same value of the lasso criterion, and if $\lambda > 0$, then they must have the same $l_1$ norm, $\square$.
 
@@ -33,14 +33,79 @@ $$\beta = (X^T X + \lambda)^{-1} X^Ty,\ \square.$$
 
 # Task 36
 
+## Variable selection under various norms
+
+### 1. Data preparation
 
 ```{r}
+load("../data/yeastStorey.rda")
 
+# split the data
+X = data[,-1]
+y = data[, 1]
+
+# set random seed
+set.seed(123)
+
+# get indexes for training set
+training.set.size = floor(0.7 * nrow(X))
+training.set.indexes = sample(seq_len(nrow(X)), size = training.set.size)
+
+# get training set
+X.train = X[training.set.indexes,]
+X.test = X[-training.set.indexes,]
+
+# get test set
+y.train = y[training.set.indexes]
+y.test = y[-training.set.indexes]
 ```
 
+### 2. Cross-validation
 
+```{r}
+library(glmnet)
 
+results.grid = matrix(0, nrow=3, ncol=11)
+rownames(results.grid) = c("alpha", "lambda", "cvm")
 
+# set alpha
+results.grid[1,] = seq(0, 1, 0.1)
+
+# grid search
+for (i in 1:length(results.grid[1,])){
+  res = cv.glmnet(x=as.matrix(X.train), y=y.train, nfolds = 10, alpha = results.grid[1,i])
+  results.grid[2,i] = res$lambda.min
+  results.grid[3,i] = min(res$cvm)
+}
+
+results.grid
+
+# fit with best alpha
+best.fit = glmnet(as.matrix(X.train), y.train, alpha = 1)
+```
+
+### 3. Predicting and plotting
+
+```{r}
+y.predicted = predict.glmnet(best.fit, as.matrix(X.test), type="response")
+
+# cmv error vs lambda
+plot(results.grid[3,], log(results.grid[2,]), xlab = "Log(lambda)", ylab = "CV mean error", main = "CV results", type = "b")
+
+# trace curve of coefficients as a function of log lambda
+plot(y=best.fit$df, x=log(best.fit$lambda), type = "s", xlab = "Log(lambda)", ylab = "Number of non-zero coefficients")
+
+# roc
+library("pROC")
+y.predicted = y.predicted[,ncol(y.predicted)]
+roc(response=y.test, predictor = y.predicted, plot=TRUE)
+
+# get all the coefficients
+coefs = coef(best.fit)
+
+# show chosen ones
+coefs@Dimnames[[1]][as.vector(coefs[,ncol(coefs)] != 0)]
+```
 
 
 
