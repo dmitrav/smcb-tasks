@@ -28,7 +28,7 @@ rownames(results.grid) = c("alpha", "lambda", "cvm")
 
 results.grid[1,] = seq(0, 1, 0.1)
 
-for (i in 1:length(alphas)){
+for (i in 1:length(results.grid[1,])){
   res = cv.glmnet(x=as.matrix(X.train), y=y.train, nfolds = 10, alpha = results.grid[1,i])
   results.grid[2,i] = res$lambda.min
   results.grid[3,i] = min(res$cvm)
@@ -36,9 +36,12 @@ for (i in 1:length(alphas)){
 
 results.grid
 
+best.alpha = results.grid[1,results.grid[3,] == min(results.grid[3,])]
+best.lambda = results.grid[2,results.grid[3,] == min(results.grid[3,])]
+
 # # assuming you wanted exactly this...
-# best.fit = glmnet(as.matrix(X.train), y.train, alpha = 1, lambda = 0.08842389)
-best.fit = glmnet(as.matrix(X.train), y.train, alpha = 1)
+best.fit = glmnet(as.matrix(X.train), y.train, alpha = best.alpha, lambda = best.lambda)
+# best.fit = glmnet(as.matrix(X.train), y.train, alpha = 1)
 
 y.predicted = predict.glmnet(best.fit, as.matrix(X.test), type="response")
 
@@ -52,6 +55,8 @@ plot(y=best.fit$df, x=log(best.fit$lambda), type = "s", xlab = "Log(lambda)", yl
 library("pROC")
 y.predicted = y.predicted[,ncol(y.predicted)]
 roc(response=y.test, predictor = y.predicted, plot=TRUE)
+
+plot(best.fit)
 
 # get all the coefficients
 coefs = coef(best.fit)
