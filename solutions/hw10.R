@@ -29,7 +29,7 @@ rownames(results.grid) = c("alpha", "lambda", "cvm")
 results.grid[1,] = seq(0, 1, 0.1)
 
 for (i in 1:length(results.grid[1,])){
-  res = cv.glmnet(x=as.matrix(X.train), y=y.train, nfolds = 10, family = "binomial", alpha = results.grid[1,i])
+  res = cv.glmnet(x=as.matrix(X.train), y=y.train, nfolds = 10, family = "binomial", alpha = results.grid[1,i], type.measure = "mse")
   results.grid[2,i] = res$lambda.min
   results.grid[3,i] = min(res$cvm)
 }
@@ -44,17 +44,19 @@ best.lambda = results.grid[2,results.grid[3,] == min(results.grid[3,])]
 best.fit = glmnet(as.matrix(X.train), y.train, family = "binomial", alpha = best.alpha, lambda = best.lambda)
 
 # predict with "the best" model
-y.predicted = predict.glmnet(best.fit, as.matrix(X.test), type="response")
+# y.predicted = predict.glmnet(best.fit, as.matrix(X.test), type="response")
+y.predicted = predict.lognet(best.fit, as.matrix(X.test), type="response")
+y.predicted = ifelse(y.predicted > 0.5, 1, 0)
 
 # plot error vs log lambda
-plot(cv.glmnet(as.matrix(X.train), y.train, alpha = best.alpha, family = "binomial"))
+plot(cv.glmnet(as.matrix(X.train), y.train, alpha = best.alpha, family = "binomial", type.measure = "mse"))
 
 # trace curve of coefficients as a function of log lambda
 plot(glmnet(as.matrix(X.train), y.train, alpha = best.alpha, family = "binomial"), xvar = "lambda")
 
 # roc
 library("pROC")
-roc(response=y.test, predictor = y.predicted, plot=TRUE)
+roc(response=y.test, predictor = as.vector(y.predicted), plot=TRUE)
 
 # get all the coefficients
 coefs = coef(best.fit)
