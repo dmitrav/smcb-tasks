@@ -29,7 +29,7 @@ rownames(results.grid) = c("alpha", "lambda", "cvm")
 results.grid[1,] = seq(0, 1, 0.1)
 
 for (i in 1:length(results.grid[1,])){
-  res = cv.glmnet(x=as.matrix(X.train), y=y.train, nfolds = 10, alpha = results.grid[1,i])
+  res = cv.glmnet(x=as.matrix(X.train), y=y.train, nfolds = 10, family = "binomial", alpha = results.grid[1,i])
   results.grid[2,i] = res$lambda.min
   results.grid[3,i] = min(res$cvm)
 }
@@ -39,29 +39,28 @@ results.grid
 best.alpha = results.grid[1,results.grid[3,] == min(results.grid[3,])]
 best.lambda = results.grid[2,results.grid[3,] == min(results.grid[3,])]
 
-# # assuming you wanted exactly this...
-best.fit = glmnet(as.matrix(X.train), y.train, alpha = best.alpha, lambda = best.lambda)
-# best.fit = glmnet(as.matrix(X.train), y.train, alpha = 1)
 
+# ok, I'm getting the fit
+best.fit = glmnet(as.matrix(X.train), y.train, family = "binomial", alpha = best.alpha, lambda = best.lambda)
+
+# predict with "the best" model
 y.predicted = predict.glmnet(best.fit, as.matrix(X.test), type="response")
 
-# cmv error vs lambda
-plot(results.grid[3,], log(results.grid[2,]), xlab = "Log(lambda)", ylab = "CV mean error", main = "CV results", type = "b")
+# plot error vs log lambda
+plot(cv.glmnet(as.matrix(X.train), y.train, alpha = best.alpha, family = "binomial"))
 
-# trace curve of coefficients as a function of log λ
-plot(y=best.fit$df, x=log(best.fit$lambda), type = "s", xlab = "Log(lambda)", ylab = "Number of non-zero coefficients")
+# trace curve of coefficients as a function of log lambda
+plot(glmnet(as.matrix(X.train), y.train, alpha = best.alpha, family = "binomial"), xvar = "lambda")
 
 # roc
 library("pROC")
-y.predicted = y.predicted[,ncol(y.predicted)]
 roc(response=y.test, predictor = y.predicted, plot=TRUE)
-
-plot(best.fit)
 
 # get all the coefficients
 coefs = coef(best.fit)
+
 # show chosen ones
-coefs@Dimnames[[1]][as.vector(coefs[,ncol(coefs)] != 0)]
+coefs@Dimnames[[1]][as.vector(coefs[,ncol(coefs)] != 0)][-1]
 
 
 
