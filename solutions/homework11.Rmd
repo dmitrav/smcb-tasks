@@ -1,0 +1,27 @@
+---
+title: "Homework 11"
+author: "Andrei Dmitrenko"
+date: "May 13, 2019"
+output:
+    pdf_document:
+html_document:
+df_print: paged
+---
+
+# Task 37
+
+## Beta-Binomial Distribution
+
+Fuck it, man.
+
+# Task 38
+
+## SNV detection
+
+```{r}
+#
+
+```
+
+
+
