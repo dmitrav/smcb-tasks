@@ -1,0 +1,124 @@
+
+setwd("/Users/andreidm/ETH/courses/smcb/solutions/")
+
+normal.data = read.csv("../data/NGSPileup/Normal_pileup.txt", sep="\t")
+tumor.data = read.csv("../data/NGSPileup/Tumor_pileup.txt", sep="\t")
+
+# some checks
+sum(normal.data$Position != tumor.data$Position)
+sum(length(normal.data$Position) != length(unique(normal.data$Position)))
+
+# plot the histograms of coverage for each
+hist(normal.data$Coverage)
+hist(tumor.data$Coverage)
+
+# plot together
+library(ggplot2)
+normal.data$type = 'normal'
+tumor.data$type = 'tumor'
+ggplot(rbind(normal.data, tumor.data), aes(Coverage, fill = type)) + geom_density(alpha = 0.4)
+
+
+library(stringr)
+
+get.contingency.tables = function(position){
+  
+  # tables for transitions to A, C, G, T 
+  tables = list(matrix(rep(0,4), 2), matrix(rep(0,4), 2), matrix(rep(0,4), 2), matrix(rep(0,4), 2))
+  
+  # calculate number of variances for normal data
+  normal.variants = 0
+  for (variance in c("A", "C", "G", "T", "a", "c", "g", "t")){
+    # any mutation is counted
+    normal.variants = normal.variants + str_count(as.character(
+      normal.data$Read_bases[normal.data$Position == position]), variance)
+  }
+  
+  # fill tables with normal data variants
+  for (i in 1:length(tables)){
+    
+    # for normal datasets we don't differentiate (random mutations)
+    tables[[i]][2,1] = normal.variants
+    tables[[i]][2,2] = normal.data$Coverage[normal.data$Position == position] - normal.variants
+    
+    # now calculate number of variants for tumor data
+    tumor.variants = 0
+    # here we differentiate mutations
+    if(i == 1){
+      # referance -> A mutation is counted
+      for (variance in c("A", "a")){
+        tumor.variants = tumor.variants + str_count(as.character(
+          tumor.data$Read_bases[tumor.data$Position == position]), variance)
+      }
+    } else if (i == 2){
+      # referance -> C mutation is counted
+      for (variance in c("C", "c")){
+        tumor.variants = tumor.variants + str_count(as.character(
+          tumor.data$Read_bases[tumor.data$Position == position]), variance)
+      }
+    } else if (i == 3){
+      # referance -> G mutation is counted
+      for (variance in c("G", "g")){
+        tumor.variants = tumor.variants + str_count(as.character(
+          tumor.data$Read_bases[tumor.data$Position == position]), variance)
+      }
+    } else if (i == 4){
+      # referance -> T mutation is counted
+      for (variance in c("T", "t")){
+        tumor.variants = tumor.variants + str_count(as.character(
+          tumor.data$Read_bases[tumor.data$Position == position]), variance)
+      }
+    }
+    
+    tables[[i]][1,1] = tumor.variants
+    tables[[i]][1,2] = tumor.data$Coverage[tumor.data$Position == position] - tumor.variants
+  }
+  
+  return(tables)
+}
+
+library(parallel)
+
+# get all the contingency matrices
+positions.tables = mclapply(normal.data$Position, get.contingency.tables, mc.cores = 8)
+
+get.p.values = function(tables){
+  
+  return(list(
+    fisher.test(tables[[1]], alternative = 't')$p.value,
+    fisher.test(tables[[2]], alternative = 't')$p.value,
+    fisher.test(tables[[3]], alternative = 't')$p.value,
+    fisher.test(tables[[4]], alternative = 't')$p.value
+    )
+  )
+}
+
+# get all the p values
+p.values = mclapply(positions.tables, get.p.values, mc.cores = 8)
+
+get.merged.results = function(all.p.values){
+  positions = c()
+  for (position in normal.data$Position){
+    positions = c(positions, rep(position, 4))
+  }
+  single.p.vector = do.call(c, all.p.values)
+  nucleotides = rep(c("A", "C", "G", "T"), length(all.p.values))
+  
+  return(list(positions, single.p.vector, nucleotides))
+}
+
+results = get.merged.results(p.values)
+
+# report some positions
+results[[1]][results[[2]] < 0.1][1:50]
+
+# report number of positions of significant SNVs
+length(results[[1]][results[[2]] < 0.1])
+
+# adjust p-values
+adjusted.p.values = p.adjust(results[[2]], method = "fdr")
+
+# report significant SNVs
+results[[1]][adjusted.p.values < 0.1]
+results[[3]][adjusted.p.values < 0.1]
+
